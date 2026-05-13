@@ -157,25 +157,24 @@ st.sidebar.markdown("---")
 st.sidebar.header("Live Swiss Stock Price")
 
 ticker_input = st.sidebar.text_input(
-    "Enter Swiss ticker (e.g. ROCHE.SW)",
-    value="ROCHE.SW"
+    "Enter Swiss ticker (e.g. ROG.SW)",
+    value="ROG.SW"
 )
 
 if ticker_input:
     try:
         import yfinance as yf
-        ticker = yf.Ticker(ticker_input)
-        hist = ticker.history(period="1d")
+        hist = yf.Ticker(ticker_input).history(period="5d")
         if not hist.empty:
-            live_price = round(hist["Close"].iloc[-1], 2)
-            st.sidebar.success(f"Live price: CHF {live_price}")
-            if st.sidebar.button("Use this price as S"):
-                S = live_price
+            live_price = round(float(hist["Close"].iloc[-1]), 2)
+            st.sidebar.success(f"Live price: {live_price}")
+            st.session_state["live_price"] = live_price
+            if st.sidebar.button(f"⬆ Use {live_price} as S"):
+                st.session_state["S"] = float(live_price)
         else:
-            st.sidebar.warning("No data found — check the ticker symbol")
+            st.sidebar.warning("No data found — try: ROG.SW / NOVN.SW / NESN.SW")
     except Exception as e:
-        st.sidebar.error("Could not fetch data — check your internet connection")
-
+        st.sidebar.warning("No data found — try: ROG.SW / NOVN.SW / NESN.SW")
 # ── Sidebar inputs
 # ── Sidebar header with LinkedIn
 st.sidebar.markdown(
@@ -196,9 +195,13 @@ st.sidebar.markdown(
 
 st.sidebar.header("Model Parameters")
 
+if "S" not in st.session_state:
+    st.session_state["S"] = 100.0
 S = st.sidebar.number_input("Current Stock Price (S)",
                               min_value=1.0, max_value=10000.0,
-                              value=100.0, step=1.0)
+                              value=st.session_state["S"],
+                              step=1.0,
+                              key="S")
 
 K = st.sidebar.number_input("Strike Price (K)",
                               min_value=1.0, max_value=10000.0,
@@ -326,7 +329,7 @@ fig_payoff.update_layout(
     hovermode="x unified",
     height=400
 )
-st.plotly_chart(fig_payoff, use_container_width=True)
+st.plotly_chart(fig_payoff, width='stretch')
 
 # ── Section 4: Heatmaps
 st.header("Sensitivity Heatmaps")
@@ -356,7 +359,7 @@ with col1:
         color_continuous_scale="Blues",
         aspect="auto"
     )
-    st.plotly_chart(fig_call, use_container_width=True)
+    st.plotly_chart(fig_call, width='stretch')
 
 with col2:
     fig_put = px.imshow(
@@ -368,7 +371,7 @@ with col2:
         color_continuous_scale="Reds",
         aspect="auto"
     )
-    st.plotly_chart(fig_put, use_container_width=True)
+    st.plotly_chart(fig_put, width='stretch')
 
 # ── Section 5: Greeks vs Stock Price
 st.header("Greeks vs Stock Price")
@@ -393,7 +396,7 @@ with col1:
         yaxis_title="Delta",
         height=350
     )
-    st.plotly_chart(fig_delta, use_container_width=True)
+    st.plotly_chart(fig_delta, width='stretch')
 
 with col2:
     fig_gamma = go.Figure()
@@ -409,7 +412,7 @@ with col2:
         yaxis_title="Gamma",
         height=350
     )
-    st.plotly_chart(fig_gamma, use_container_width=True)
+    st.plotly_chart(fig_gamma, width='stretch')
 
 # ── Footer
 # ── Footer
